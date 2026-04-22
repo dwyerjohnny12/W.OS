@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>W.OS — 3R Bundle Room Floor Plan</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#5cb870;--green-d:#3d9e50;--green-l:#edf7ee;--green-m:#c4e8c9;
+  --sidebar:#0e0e0e;--bg:#f2f5f2;--surface:#fff;
+  --border:rgba(0,0,0,0.08);--text:#111;--t2:#555;--t3:#999;
+  --s-empty:#dde8dd;--s-empty-s:#aec4ae;
+  --s-occ:#5cb870;--s-occ-s:#2d7a3a;
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--text)}
+.shell{display:flex;height:100vh}
+.sidebar{width:48px;background:var(--sidebar);display:flex;flex-direction:column;align-items:center;padding:14px 0 12px;flex-shrink:0}
+.sid-logo{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:var(--green);writing-mode:vertical-rl;transform:rotate(180deg);letter-spacing:.08em;margin-bottom:auto}
+.sid-dot{width:5px;height:5px;border-radius:50%;background:var(--green)}
+.map-area{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{padding:11px 18px 9px;background:var(--surface);border-bottom:.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.topbar-title{font-size:13px;font-weight:500}
+.topbar-sub{font-size:10.5px;color:var(--t3);font-family:'IBM Plex Mono',monospace}
+.legend{display:flex;gap:14px;align-items:center}
+.leg{display:flex;align-items:center;gap:5px;font-size:10.5px;color:var(--t2)}
+.leg-box{width:11px;height:11px;border-radius:2px;border:1.5px solid}
+.leg-occ{background:var(--s-occ);border-color:var(--s-occ-s)}
+.leg-emp{background:var(--s-empty);border-color:var(--s-empty-s)}
+.leg-floor{background:rgba(220,60,60,0.13);border-color:#c44;border-style:dashed}
+.api-strip{background:var(--green-l);border-bottom:.5px solid var(--green-m);padding:7px 18px;display:flex;align-items:center;gap:8px;flex-shrink:0;font-size:11px}
+.api-strip label{color:#2d6e38;font-weight:500;white-space:nowrap}
+.api-strip input{font-family:'IBM Plex Mono',monospace;font-size:11px;border:.5px solid var(--green-m);border-radius:4px;padding:4px 8px;flex:1;max-width:260px;outline:none;background:#f8fdf8}
+.api-strip input:focus{border-color:var(--green)}
+.api-strip button{background:var(--green);color:#fff;border:none;border-radius:4px;padding:4px 12px;font-size:11px;cursor:pointer;white-space:nowrap}
+.api-ok{color:var(--green-d);display:flex;align-items:center;gap:5px}
+.change-tok{color:var(--green-d);text-decoration:underline;cursor:pointer;font-size:10px;margin-left:4px}
+.map-scroll{flex:1;overflow:auto;padding:14px;display:flex;justify-content:center}
+svg.floorplan{display:block}
+.shelf{cursor:pointer}.shelf:hover .shelf-rect{opacity:.82}
+.shelf.selected .shelf-rect{stroke-width:2.5;stroke:#111 !important}
+.floor-space{cursor:pointer}.floor-space:hover .fs-rect{opacity:.75}
+.detail{width:252px;background:var(--surface);border-left:.5px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+.det-head{padding:13px 15px 10px;border-bottom:.5px solid var(--border);flex-shrink:0}
+.det-id{font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:600;color:var(--green)}
+.det-zone{font-size:10.5px;color:var(--t3);margin-top:2px;text-transform:uppercase;letter-spacing:.07em}
+.det-body{padding:13px 15px;flex:1;overflow-y:auto}
+.det-empty{color:var(--t3);font-size:12px;font-style:italic;padding-top:14px;text-align:center;line-height:1.7}
+.row-block{margin-bottom:12px;padding-bottom:12px;border-bottom:.5px solid var(--border)}
+.row-block:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.row-label{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px}
+.client-tag{display:inline-block;background:var(--green-l);border:.5px solid var(--green-m);border-radius:4px;padding:2px 7px;font-size:11px;font-weight:500;color:var(--green-d);margin-bottom:6px}
+.inv-item{padding:4px 0;border-bottom:.5px solid #f5f5f5}.inv-item:last-child{border-bottom:none}
+.inv-name{font-size:12px;color:var(--text)}
+.inv-sizes{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--t2);margin-top:1px}
+.no-inv{font-size:11px;color:var(--t3);font-style:italic}
+.fs-note{font-size:11px;color:var(--t2);margin-bottom:10px;line-height:1.5}
+.fs-form{display:flex;flex-direction:column;gap:8px}
+.fs-field{display:flex;flex-direction:column;gap:3px}
+.fs-field label{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--t3);font-weight:500}
+.fs-field input,.fs-field textarea{font-family:'IBM Plex Sans',sans-serif;font-size:12px;border:.5px solid var(--border);border-radius:5px;padding:6px 8px;outline:none;color:var(--text);background:var(--surface);width:100%}
+.fs-field input:focus,.fs-field textarea:focus{border-color:var(--green)}
+.fs-field textarea{resize:vertical;min-height:50px}
+.sz-row{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.sz-row2{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:4px}
+.sz-cell{display:flex;flex-direction:column;align-items:center;gap:2px}
+.sz-cell label{font-size:9px;color:var(--t3);font-family:'IBM Plex Mono',monospace}
+.sz-cell input{text-align:center;padding:4px 2px;font-size:12px;font-family:'IBM Plex Mono',monospace;width:100%;border:.5px solid var(--border);border-radius:4px;outline:none;background:var(--surface)}
+.btn-save{background:var(--green);color:#fff;border:none;border-radius:6px;padding:8px;font-size:12px;font-weight:500;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;margin-top:4px;width:100%}
+.btn-save:hover{background:var(--green-d)}
+.fs-saved{display:flex;flex-direction:column;gap:6px;margin-top:4px;margin-bottom:12px}
+.fs-saved-item{background:var(--bg);border:.5px solid var(--border);border-radius:5px;padding:8px 10px;font-size:11.5px}
+.fs-saved-name{font-weight:500;color:var(--text)}
+.fs-saved-sizes{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--t2);margin-top:2px}
+.section-head{font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:var(--t3);padding:10px 0 6px;display:flex;align-items:center;gap:8px;font-weight:500}
+.section-head::after{content:'';flex:1;height:.5px;background:var(--border)}
+.loading{display:flex;align-items:center;gap:5px;color:var(--t3);font-size:11px;padding:14px 0}
+.dots{display:inline-flex;gap:3px}
+.dots span{width:3px;height:3px;border-radius:50%;background:currentColor;animation:dp 1.2s ease-in-out infinite}
+.dots span:nth-child(2){animation-delay:.2s}.dots span:nth-child(3){animation-delay:.4s}
+@keyframes dp{0%,80%,100%{opacity:.25}40%{opacity:1}}
+.badge-floor{display:inline-block;background:#fdeaea;border:.5px solid #e8b3b3;border-radius:3px;padding:1px 5px;font-size:9px;color:#c44;text-transform:uppercase;letter-spacing:.06em;font-weight:500}
+</style>
+</head>
+<body>
+<div class="shell">
+<div class="sidebar">
+  <div class="sid-logo">W.OS</div>
+  <div class="sid-dot"></div>
+</div>
+<div class="map-area">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">3R — Bundle Room Floor Plan</div>
+      <div class="topbar-sub">3R Zone · Click any shelf or floor space to view inventory</div>
+    </div>
+    <div class="legend">
+      <div class="leg"><div class="leg-box leg-occ"></div>Occupied</div>
+      <div class="leg"><div class="leg-box leg-emp"></div>Empty</div>
+      <div class="leg"><div class="leg-box leg-floor"></div>Floor Space</div>
+    </div>
+  </div>
+  <div id="api-strip"></div>
+  <div class="map-scroll">
+    <svg class="floorplan" id="map" viewBox="0 0 860 640" width="860" height="640" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <pattern id="hatch" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
+          <line x1="0" y1="0" x2="0" y2="8" stroke="#e88" stroke-width="2" stroke-opacity=".4"/>
+        </pattern>
+      </defs>
+
+      <!-- Room boundary -->
+      <rect x="12" y="12" width="836" height="616" fill="none" stroke="#bbb" stroke-width="1.5" rx="1"/>
+
+      <!-- Desk (grey box, centre) -->
+      <rect x="395" y="58" width="193" height="187" fill="#c8c8c8" stroke="#aaa" stroke-width="1.2" rx="2"/>
+      <text x="491" y="157" text-anchor="middle" dominant-baseline="middle" font-size="12" fill="#888" font-family="IBM Plex Sans,sans-serif" font-weight="500">Desk</text>
+
+      <!-- Returns / Outbound area -->
+      <line x1="420" y1="460" x2="620" y2="460" stroke="#888" stroke-width="1.5"/>
+      <line x1="503" y1="460" x2="503" y2="610" stroke="#ccc" stroke-width="1"/>
+      <text x="458" y="453" text-anchor="middle" font-size="9.5" fill="#555" font-family="IBM Plex Sans,sans-serif" font-weight="500">Returns</text>
+      <text x="558" y="453" text-anchor="middle" font-size="9.5" fill="#555" font-family="IBM Plex Sans,sans-serif" font-weight="500">OutBound</text>
+
+      <!-- Floor space sections -->
+      <g class="floor-space" onclick="selectFloor(1)">
+        <rect class="fs-rect" x="276" y="222" width="58" height="62" fill="url(#hatch)" stroke="#c44" stroke-width="1.2" rx="2" stroke-dasharray="4,2"/>
+        <rect x="276" y="222" width="58" height="62" fill="rgba(220,60,60,0.06)" rx="2"/>
+        <text x="305" y="250" text-anchor="middle" dominant-baseline="middle" font-size="7.5" fill="#c44" font-family="IBM Plex Mono,monospace" font-weight="600">FLOOR</text>
+        <text x="305" y="262" text-anchor="middle" dominant-baseline="middle" font-size="7" fill="#c44" font-family="IBM Plex Mono,monospace">SPACE 1</text>
+      </g>
+      <g class="floor-space" onclick="selectFloor(2)">
+        <rect class="fs-rect" x="276" y="290" width="58" height="62" fill="url(#hatch)" stroke="#c44" stroke-width="1.2" rx="2" stroke-dasharray="4,2"/>
+        <rect x="276" y="290" width="58" height="62" fill="rgba(220,60,60,0.06)" rx="2"/>
+        <text x="305" y="318" text-anchor="middle" dominant-baseline="middle" font-size="7.5" fill="#c44" font-family="IBM Plex Mono,monospace" font-weight="600">FLOOR</text>
+        <text x="305" y="330" text-anchor="middle" dominant-baseline="middle" font-size="7" fill="#c44" font-family="IBM Plex Mono,monospace">SPACE 2</text>
+      </g>
+      <g class="floor-space" onclick="selectFloor(3)">
+        <rect class="fs-rect" x="276" y="358" width="58" height="72" fill="url(#hatch)" stroke="#c44" stroke-width="1.2" rx="2" stroke-dasharray="4,2"/>
+        <rect x="276" y="358" width="58" height="72" fill="rgba(220,60,60,0.06)" rx="2"/>
+        <text x="305" y="390" text-anchor="middle" dominant-baseline="middle" font-size="7.5" fill="#c44" font-family="IBM Plex Mono,monospace" font-weight="600">FLOOR</text>
+        <text x="305" y="402" text-anchor="middle" dominant-baseline="middle" font-size="7" fill="#c44" font-family="IBM Plex Mono,monospace">SPACE 3</text>
+      </g>
+
+      <g id="shelves"></g>
+    </svg>
+  </div>
+</div>
+
+<div class="detail">
+  <div class="det-head">
+    <div class="det-id" id="det-id">—</div>
+    <div class="det-zone" id="det-zone">Select a shelf or floor space</div>
+  </div>
+  <div class="det-body" id="det-body">
+    <div class="det-empty">Click any shelf or floor space to view or log inventory.</div>
+  </div>
+</div>
+</div>
+
+<script>
+const BASE='appDztJphtUzYxw2W';
+const AT_URL='https://api.airtable.com/v0';
+const TBL={loc:'tblephXAY034X8SCp',inv:'tbl6EXI5TBRziJoQd',v:'tblbYBhO79TJrWZpu'};
+let token=localStorage.getItem('wos_token')||'';
+let occupiedShelves=new Set();
+
+// ── Shelf definitions ─────────────────────────────────────────────
+const SHELVES=[
+
+  // ═══ LEFT COLUMN — paired shelves (AO→AH, top to bottom) ═══
+  {id:'AO', x:284, y:34,  w:52, h:20},
+  {id:'AN', x:284, y:56,  w:52, h:20},
+
+  {id:'AM', x:284, y:84,  w:52, h:20},
+  {id:'AL', x:284, y:106, w:52, h:20},
+
+  {id:'AK', x:284, y:132, w:52, h:20},
+  {id:'AJ', x:284, y:154, w:52, h:20},
+
+  {id:'AI', x:284, y:180, w:52, h:20},
+  {id:'AH', x:284, y:202, w:52, h:20},
+
+  // ═══ BOTTOM LEFT — AP + AQ/AR perpendicular to AP ═══
+  {id:'AP', x:284, y:500, w:52, h:20},
+  // AQ and AR: vertical orientation (perpendicular to AP which is horizontal)
+  {id:'AQ', x:284, y:528, w:20, h:52},
+  {id:'AR', x:284, y:586, w:20, h:46},
+
+  // ═══ RIGHT WALL — AA–AE rotated 90°, vertical portrait orientation, single column ═══
+  {id:'AA', x:652, y:34,  w:20, h:52},
+  {id:'AB', x:652, y:90,  w:20, h:52},
+  {id:'AC', x:652, y:146, w:20, h:52},
+  {id:'AD', x:652, y:202, w:20, h:52},
+  {id:'AE', x:652, y:258, w:20, h:52},
+
+  // AF and AG — horizontal (52×20), side by side, perpendicular to the vertical AA–AE axis
+  {id:'AF', x:610, y:322, w:52, h:20},
+  {id:'AG', x:666, y:322, w:52, h:20},
+
+  // ═══ RETURNS / OUTBOUND GRID ═══
+  // Left column (Returns)
+  {id:'AY', x:424, y:469, w:70, h:22},
+  {id:'AX', x:424, y:495, w:70, h:22},
+  {id:'AV', x:424, y:521, w:70, h:22},
+  {id:'AS', x:424, y:547, w:70, h:22},
+
+  // Right column (OutBound)
+  {id:'AZ', x:508, y:469, w:70, h:22},
+  {id:'AW', x:508, y:495, w:70, h:22},
+  {id:'AU', x:508, y:521, w:70, h:22},
+  {id:'AT', x:508, y:547, w:70, h:22},
+];
+
+// ── Render ────────────────────────────────────────────────────────
+function renderShelves(){
+  const g=document.getElementById('shelves');
+  g.innerHTML='';
+  SHELVES.forEach(s=>{
+    const grp=document.createElementNS('http://www.w3.org/2000/svg','g');
+    grp.setAttribute('class','shelf');
+    grp.setAttribute('data-id',s.id);
+
+    const r=document.createElementNS('http://www.w3.org/2000/svg','rect');
+    r.setAttribute('class','shelf-rect');
+    r.setAttribute('x',s.x); r.setAttribute('y',s.y);
+    r.setAttribute('width',s.w); r.setAttribute('height',s.h);
+    r.setAttribute('rx','2');
+    r.setAttribute('fill','var(--s-empty)');
+    r.setAttribute('stroke','var(--s-empty-s)');
+    r.setAttribute('stroke-width','1');
+    grp.appendChild(r);
+
+    const tx=s.x+s.w/2, ty=s.y+s.h/2;
+    const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x',tx); t.setAttribute('y',ty);
+    t.setAttribute('text-anchor','middle');
+    t.setAttribute('dominant-baseline','middle');
+    t.setAttribute('font-size','7.5');
+    t.setAttribute('font-family','IBM Plex Mono,monospace');
+    t.setAttribute('font-weight','500');
+    t.setAttribute('fill','#333');
+    t.setAttribute('pointer-events','none');
+    // Rotate label for vertical shelves so it reads correctly
+    if(s.h>s.w) t.setAttribute('transform',`rotate(-90,${tx},${ty})`);
+    t.textContent=s.id;
+    grp.appendChild(t);
+
+    grp.addEventListener('click',()=>selectShelf(s.id));
+    g.appendChild(grp);
+  });
+}
+
+function colorShelf(id,occ){
+  const g=document.querySelector(`[data-id="${id}"]`);
+  if(!g)return;
+  const r=g.querySelector('.shelf-rect');
+  if(!r)return;
+  r.setAttribute('fill',occ?'var(--s-occ)':'var(--s-empty)');
+  r.setAttribute('stroke',occ?'var(--s-occ-s)':'var(--s-empty-s)');
+}
+
+function highlightShelf(id){
+  document.querySelectorAll('.shelf').forEach(g=>g.classList.remove('selected'));
+  if(id){const g=document.querySelector(`.shelf[data-id="${id}"]`);if(g)g.classList.add('selected');}
+}
+
+// ── Airtable ──────────────────────────────────────────────────────
+async function api(path){
+  if(!token)throw new Error('No token');
+  const r=await fetch(AT_URL+path,{headers:{'Authorization':'Bearer '+token}});
+  const d=await r.json();
+  if(d.error)throw new Error(d.error.message||JSON.stringify(d.error));
+  return d;
+}
+
+async function loadOccupied(){
+  if(!token)return;
+  try{
+    const f=encodeURIComponent("NOT({Vendor}='')");
+    let off='';
+    occupiedShelves=new Set();
+    do{
+      const d=await api(`/${BASE}/${TBL.loc}?filterByFormula=${f}&fields[]=ShelfID${off?'&offset='+off:''}`);
+      d.records.forEach(r=>{if(r.fields['ShelfID'])occupiedShelves.add(r.fields['ShelfID'])});
+      off=d.offset||'';
+    }while(off);
+    occupiedShelves.forEach(id=>colorShelf(id,true));
+  }catch(e){console.warn('Occupied load:',e.message)}
+}
+
+// ── Shelf click ───────────────────────────────────────────────────
+async function selectShelf(id){
+  highlightShelf(id);
+  document.getElementById('det-id').textContent=id;
+  document.getElementById('det-zone').textContent='3R — Bundle Room';
+  document.getElementById('det-body').innerHTML='<div class="loading">Loading <div class="dots"><span></span><span></span><span></span></div></div>';
+  if(!token){document.getElementById('det-body').innerHTML='<div class="det-empty">Enter your Airtable token to view inventory.</div>';return;}
+  try{
+    const f=encodeURIComponent(`{ShelfID}="${id}"`);
+    const loc=await api(`/${BASE}/${TBL.loc}?filterByFormula=${f}&fields[]=FULL ID&fields[]=RowID&fields[]=Vendor&fields[]=Inventory`);
+    if(!loc.records.length){document.getElementById('det-body').innerHTML=`<div class="det-empty">No records found for shelf ${id}.<br><br>This shelf may not be set up in Airtable yet.</div>`;return;}
+    let html='';
+    for(const r of loc.records){
+      const fullId=r.fields['FULL ID']||id;
+      const row=r.fields['RowID']||'—';
+      const vendors=r.fields['Vendor']||[];
+      const invs=r.fields['Inventory']||[];
+      html+=`<div class="row-block"><div class="row-label">Row ${row} · ${esc(fullId)}</div>`;
+      if(vendors.length)html+=`<div class="client-tag">${esc(vendors[0].name)}</div>`;
+      if(invs.length){
+        const ids=invs.slice(0,10).map(i=>'records[]='+i.id).join('&');
+        const inv=await api(`/${BASE}/${TBL.inv}?${ids}&fields[]=Name&fields[]=Color&fields[]=XS&fields[]=S&fields[]=M&fields[]=L&fields[]=XL&fields[]=2XL&fields[]=3XL%2B`);
+        inv.records.forEach(r=>{
+          const f=r.fields;
+          const sz=['XS','S','M','L','XL','2XL','3XL+'].map(s=>f[s]?`${s}:${f[s]}`:null).filter(Boolean).join(' ');
+          html+=`<div class="inv-item"><div class="inv-name">${esc(f['Name']||'—')}${f['Color']?` <span style="color:var(--t3);font-size:10px">(${esc(f['Color'])})</span>`:''}</div>${sz?`<div class="inv-sizes">${sz}</div>`:''}</div>`;
+        });
+      }else html+=`<div class="no-inv">No inventory linked</div>`;
+      html+='</div>';
+    }
+    document.getElementById('det-body').innerHTML=html;
+  }catch(e){document.getElementById('det-body').innerHTML=`<div class="det-empty" style="color:#a33">${esc(e.message)}</div>`;}
+}
+
+// ── Floor space click ─────────────────────────────────────────────
+function selectFloor(n){
+  highlightShelf(null);
+  document.getElementById('det-id').textContent=`Floor Space ${n}`;
+  document.getElementById('det-zone').innerHTML='3R · <span class="badge-floor">No Location ID</span>';
+  renderFloorPanel(n,getFloorData(n));
+}
+
+function renderFloorPanel(n,items){
+  const saved=items.length
+    ?`<div class="section-head">Currently stored</div><div class="fs-saved">${items.map((it,i)=>`
+      <div class="fs-saved-item">
+        <div class="fs-saved-name">${esc(it.name)}${it.color?` <span style="color:var(--t3);font-size:10px">(${esc(it.color)})</span>`:''}</div>
+        ${it.sizes?`<div class="fs-saved-sizes">${esc(it.sizes)}</div>`:''}
+        ${it.notes?`<div style="font-size:10px;color:var(--t2);margin-top:2px">${esc(it.notes)}</div>`:''}
+        <button onclick="removeFloorItem(${n},${i})" style="margin-top:4px;font-size:10px;background:none;border:none;color:#c44;cursor:pointer;padding:0;text-decoration:underline">Remove</button>
+      </div>`).join('')}</div>`
+    :`<div class="det-empty" style="padding-top:6px;text-align:left;font-style:normal;color:var(--t3);font-size:11px">Nothing logged here yet.</div>`;
+
+  document.getElementById('det-body').innerHTML=`
+    <div class="fs-note">Floor space — no shelf ID. Log what's stored here.</div>
+    ${saved}
+    <div class="section-head">Log new item</div>
+    <div class="fs-form">
+      <div class="fs-field"><label>Item Name</label><input id="fs-name" placeholder="e.g. Champion T-Shirt, Boxes…"/></div>
+      <div class="fs-field"><label>Color</label><input id="fs-color" placeholder="e.g. Black, Mixed…"/></div>
+      <div class="fs-field">
+        <label>Quantities by Size</label>
+        <div class="sz-row">
+          <div class="sz-cell"><label>XS</label><input type="number" id="fs-xs" min="0" placeholder="0"/></div>
+          <div class="sz-cell"><label>S</label><input type="number" id="fs-s" min="0" placeholder="0"/></div>
+          <div class="sz-cell"><label>M</label><input type="number" id="fs-m" min="0" placeholder="0"/></div>
+          <div class="sz-cell"><label>L</label><input type="number" id="fs-l" min="0" placeholder="0"/></div>
+        </div>
+        <div class="sz-row2">
+          <div class="sz-cell"><label>XL</label><input type="number" id="fs-xl" min="0" placeholder="0"/></div>
+          <div class="sz-cell"><label>2XL</label><input type="number" id="fs-2xl" min="0" placeholder="0"/></div>
+          <div class="sz-cell"><label>3XL+</label><input type="number" id="fs-3xl" min="0" placeholder="0"/></div>
+        </div>
+      </div>
+      <div class="fs-field"><label>Notes</label><textarea id="fs-notes" placeholder="Optional…"></textarea></div>
+      <button class="btn-save" onclick="saveFloorItem(${n})">Save to Floor Space ${n}</button>
+    </div>`;
+}
+
+function getFloorData(n){try{return JSON.parse(localStorage.getItem('wos_floor_'+n)||'[]')}catch{return[]}}
+function setFloorData(n,d){localStorage.setItem('wos_floor_'+n,JSON.stringify(d))}
+
+function saveFloorItem(n){
+  const name=(document.getElementById('fs-name')?.value||'').trim();
+  if(!name){alert('Enter an item name.');return;}
+  const sz=[['XS','fs-xs'],['S','fs-s'],['M','fs-m'],['L','fs-l'],['XL','fs-xl'],['2XL','fs-2xl'],['3XL+','fs-3xl']]
+    .map(([l,id])=>{const v=parseInt(document.getElementById(id)?.value||0);return v?`${l}:${v}`:null}).filter(Boolean).join(' ');
+  const d=getFloorData(n);
+  d.push({name,color:(document.getElementById('fs-color')?.value||'').trim(),sizes:sz,notes:(document.getElementById('fs-notes')?.value||'').trim(),ts:new Date().toLocaleDateString()});
+  setFloorData(n,d);
+  renderFloorPanel(n,d);
+}
+function removeFloorItem(n,i){const d=getFloorData(n);d.splice(i,1);setFloorData(n,d);renderFloorPanel(n,d);}
+
+// ── Token banner ──────────────────────────────────────────────────
+function renderBanner(){
+  const el=document.getElementById('api-strip');
+  if(!el)return;
+  el.innerHTML=token
+    ?`<div class="api-strip"><div class="api-ok">&#10003; Airtable connected<span class="change-tok" onclick="clearTok()">change</span></div></div>`
+    :`<div class="api-strip"><label>Airtable Token</label><input type="password" id="tok" placeholder="pat..."/><button onclick="saveTok()">Connect</button><span style="color:var(--t3);font-size:10px;margin-left:6px">Same token as W.OS</span></div>`;
+}
+function saveTok(){const v=(document.getElementById('tok')?.value||'').trim();if(!v.startsWith('pat')){alert('Enter a valid Airtable token (starts with pat...)');return;}token=v;localStorage.setItem('wos_token',v);renderBanner();loadOccupied();}
+function clearTok(){token='';localStorage.removeItem('wos_token');renderBanner();}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+renderBanner();
+renderShelves();
+if(token)loadOccupied();
+</script>
+</body>
+</html>
