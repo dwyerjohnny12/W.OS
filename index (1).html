@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>W.OS — UpMerch Warehouse</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f4f7f4;
+  --surface:#ffffff;
+  --border:rgba(0,0,0,0.09);
+  --border-soft:rgba(0,0,0,0.055);
+  --text:#111;
+  --text-2:#555;
+  --text-3:#999;
+  --green:#5cb870;
+  --green-dark:#3d9e50;
+  --green-light:#edf7ee;
+  --green-mid:#c4e8c9;
+  --sidebar:#111;
+  --r:8px;
+}
+body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.shell{display:flex;min-height:100vh}
+.sidebar{width:200px;background:var(--sidebar);display:flex;flex-direction:column;flex-shrink:0;position:fixed;top:0;left:0;bottom:0;z-index:10}
+.sid-logo{padding:20px 16px 16px;border-bottom:1px solid #1e1e1e}
+.sid-logo .mark{font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:500;color:var(--green);letter-spacing:.05em}
+.sid-logo .sub{font-size:10px;color:#555;margin-top:3px;letter-spacing:.1em;text-transform:uppercase}
+.sid-nav{padding:12px 0;flex:1}
+.nav-item{display:flex;align-items:center;gap:9px;padding:10px 16px;cursor:pointer;font-size:12.5px;color:#777;border-left:2px solid transparent;letter-spacing:.02em;transition:all .12s;user-select:none}
+.nav-item:hover{color:#ccc;background:#1a1a1a}
+.nav-item.active{color:var(--green);border-left-color:var(--green);background:#1a1a1a}
+.nav-icon{width:14px;height:14px;flex-shrink:0;opacity:.6}
+.nav-item.active .nav-icon{opacity:1}
+.sid-footer{padding:14px 16px;border-top:1px solid #1e1e1e}
+.sid-status{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#444;display:flex;align-items:center;gap:6px}
+.status-dot{width:5px;height:5px;border-radius:50%;background:var(--green);flex-shrink:0}
+.main{margin-left:200px;flex:1;display:flex;flex-direction:column}
+.topbar{padding:16px 28px 14px;background:var(--surface);border-bottom:.5px solid var(--border-soft);display:flex;align-items:baseline;justify-content:space-between;position:sticky;top:0;z-index:5}
+.topbar-title{font-size:14px;font-weight:500}
+.topbar-hint{font-size:11px;color:var(--text-3)}
+.content{padding:24px 28px;max-width:800px}
+.api-banner{background:var(--green-light);border:.5px solid var(--green-mid);border-radius:var(--r);padding:13px 16px;margin-bottom:20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.api-banner label{font-size:12px;color:#2d6e38;font-weight:500;white-space:nowrap}
+.api-banner input{flex:1;min-width:180px;font-family:'IBM Plex Mono',monospace;font-size:12px;border:.5px solid var(--green-mid);background:#f8fdf8;border-radius:5px;padding:6px 10px;color:#111;outline:none}
+.api-banner input:focus{border-color:var(--green)}
+.save-key-btn{background:var(--green);color:#fff;border:none;border-radius:5px;padding:7px 16px;font-size:12px;font-weight:500;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;white-space:nowrap}
+.save-key-btn:hover{background:var(--green-dark)}
+.api-ok{font-size:11px;color:var(--green-dark);display:flex;align-items:center;gap:6px}
+.change-key{color:var(--green-dark);font-size:10.5px;margin-left:4px;cursor:pointer;text-decoration:underline}
+.section-head{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-3);padding:14px 0 8px;display:flex;align-items:center;gap:10px}
+.section-head::after{content:'';flex:1;height:.5px;background:var(--border-soft)}
+.form-row{display:grid;gap:12px;margin-bottom:12px}
+.cols2{grid-template-columns:1fr 1fr}
+.cols3{grid-template-columns:1fr 1fr 1fr}
+.field-group{display:flex;flex-direction:column;gap:5px}
+.field-group label{font-size:11px;color:var(--text-2);text-transform:uppercase;letter-spacing:.08em;font-weight:500}
+input,select,textarea{font-family:'IBM Plex Sans',sans-serif;font-size:13px;width:100%;background:var(--surface);border:.5px solid var(--border);border-radius:6px;padding:8px 11px;color:var(--text);outline:none;transition:border-color .12s}
+input:focus,select:focus,textarea:focus{border-color:var(--green)}
+input::placeholder,textarea::placeholder{color:var(--text-3)}
+textarea{resize:vertical;min-height:60px}
+.form-note{font-size:10.5px;color:var(--text-3);margin-top:3px}
+.size-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+.size-cell{display:flex;flex-direction:column;align-items:center;gap:4px}
+.size-cell label{font-size:10px;color:var(--text-3);font-family:'IBM Plex Mono',monospace;text-transform:uppercase}
+.size-cell input{text-align:center;padding:6px 4px;font-family:'IBM Plex Mono',monospace;font-size:13px}
+.btn-row{display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap}
+.btn-primary{background:var(--green);color:#fff;border:none;border-radius:7px;padding:10px 24px;font-size:13px;font-weight:500;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;transition:all .15s;white-space:nowrap}
+.btn-primary:hover{background:var(--green-dark)}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed}
+.btn-ghost{background:transparent;border:.5px solid var(--border);border-radius:7px;padding:9px 16px;font-size:12px;color:var(--text-2);cursor:pointer;font-family:'IBM Plex Sans',sans-serif}
+.btn-ghost:hover{background:var(--bg)}
+.btn-danger{background:transparent;border:.5px solid #e8b3b3;border-radius:6px;padding:5px 11px;font-size:11px;color:#a33;cursor:pointer;font-family:'IBM Plex Sans',sans-serif}
+.btn-danger:hover{background:#faeaea}
+.btn-warning{background:transparent;border:.5px solid #f5c842;border-radius:7px;padding:9px 20px;font-size:13px;font-weight:500;color:#7a5a00;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;transition:all .15s}
+.btn-warning:hover{background:#fff8e6}
+.btn-warning:disabled{opacity:.4;cursor:not-allowed}
+.result-card{border-radius:8px;padding:14px 16px;margin-top:16px;font-size:13px;line-height:1.7}
+.result-card.success{background:var(--green-light);border:.5px solid var(--green-mid);color:#1a5c2a}
+.result-card.error{background:#faeaea;border:.5px solid #e8b3b3;color:#5c1a1a}
+.result-card.info{background:var(--surface);border:.5px solid var(--border-soft);color:var(--text)}
+.result-card.warning{background:#fff8e6;border:.5px solid #f5c842;color:#7a5a00}
+.txn-id{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:500;color:var(--green-dark)}
+.client-search-bar{display:flex;gap:10px;margin-bottom:16px}
+.client-search-bar input{flex:1}
+.client-found{background:var(--green-light);border:.5px solid var(--green-mid);border-radius:var(--r);padding:13px 16px;margin-bottom:16px}
+.client-found-name{font-size:13px;font-weight:500;color:var(--green-dark)}
+.client-found-locs{font-size:11px;color:#3d9e50;margin-top:2px}
+.client-new-badge{background:#fff8e6;border:.5px solid #f5c842;border-radius:var(--r);padding:11px 16px;margin-bottom:16px;font-size:12px;color:#7a5a00}
+.item-block{background:var(--bg);border:.5px solid var(--border-soft);border-radius:var(--r);padding:14px 16px;margin-bottom:10px}
+.item-block-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.item-block-num{font-size:11px;color:var(--text-3);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.06em}
+.add-item-btn{display:flex;align-items:center;gap:6px;background:transparent;border:.5px dashed var(--green-mid);border-radius:7px;padding:9px 16px;font-size:12px;color:var(--green-dark);cursor:pointer;width:100%;justify-content:center;margin-top:4px;font-family:'IBM Plex Sans',sans-serif}
+.add-item-btn:hover{background:var(--green-light)}
+.lookup-bar{display:flex;gap:10px;margin-bottom:18px}
+.lookup-bar input{flex:1}
+.lookup-table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}
+.lookup-table th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3);padding:6px 12px;border-bottom:.5px solid var(--border-soft);font-weight:500}
+.lookup-table td{padding:8px 12px;border-bottom:.5px solid var(--border-soft);vertical-align:middle}
+.lookup-table tr:last-child td{border-bottom:none}
+.lookup-table tr:hover td{background:var(--bg)}
+.loading-pulse{display:flex;align-items:center;gap:7px;color:var(--text-3);font-size:12px;padding:20px 0}
+.dot-anim{display:inline-flex;gap:3px}
+.dot-anim span{width:4px;height:4px;border-radius:50%;background:currentColor;animation:pulse 1.2s ease-in-out infinite}
+.dot-anim span:nth-child(2){animation-delay:.2s}
+.dot-anim span:nth-child(3){animation-delay:.4s}
+@keyframes pulse{0%,80%,100%{opacity:.3}40%{opacity:1}}
+.empty-state{color:var(--text-3);font-size:12.5px;padding:32px 0;text-align:center;font-style:italic}
+
+/* Location Update */
+.loc-client-card{background:var(--surface);border:.5px solid var(--border-soft);border-radius:var(--r);padding:16px 18px;margin-bottom:18px}
+.loc-client-name{font-size:15px;font-weight:500;margin-bottom:8px}
+.loc-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px}
+.loc-chip{font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--bg);border:.5px solid var(--border);border-radius:4px;padding:3px 9px;color:var(--text-2)}
+.loc-chip.primary{background:var(--green-light);border-color:var(--green-mid);color:var(--green-dark)}
+.loc-chip-label{font-size:10px;color:var(--text-3);margin-top:4px}
+.loc-mode-row{display:flex;gap:8px;margin-bottom:14px}
+.loc-mode-btn{flex:1;padding:9px 12px;border-radius:6px;border:.5px solid var(--border);font-size:12px;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;color:var(--text-2);background:var(--surface);text-align:center;transition:all .12s}
+.loc-mode-btn:hover{background:var(--bg)}
+.loc-mode-btn.selected{border-color:var(--green);color:var(--green-dark);background:var(--green-light);font-weight:500}
+.inv-update-note{font-size:11px;color:var(--text-3);margin-top:3px;line-height:1.5}
+
+/* Out of Stock */
+.oos-item-row{display:flex;align-items:center;gap:12px;background:var(--surface);border:.5px solid var(--border-soft);border-radius:7px;padding:10px 14px;margin-bottom:6px;cursor:pointer;transition:background .1s}
+.oos-item-row:hover{background:var(--bg)}
+.oos-item-row.checked{background:var(--green-light);border-color:var(--green-mid)}
+.oos-item-row.already-oos{opacity:.5;cursor:not-allowed}
+.oos-check{width:16px;height:16px;accent-color:var(--green);flex-shrink:0;cursor:pointer}
+.oos-item-name{font-size:13px;font-weight:500;flex:1}
+.oos-item-meta{font-size:11px;color:var(--text-3);font-family:'IBM Plex Mono',monospace}
+.oos-status-badge{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:500;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;background:#faeaea;border:.5px solid #e8b3b3;color:#a33}
+.oos-active-badge{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:500;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;background:var(--green-light);border:.5px solid var(--green-mid);color:#1a5c2a}
+.oos-select-bar{display:flex;align-items:center;gap:12px;margin-bottom:12px;padding-bottom:10px;border-bottom:.5px solid var(--border-soft)}
+.oos-select-bar button{font-size:11px;color:var(--green-dark);background:none;border:none;cursor:pointer;padding:0;font-family:'IBM Plex Sans',sans-serif;text-decoration:underline}
+.oos-count-label{font-size:11px;color:var(--text-3);margin-left:auto}
+
+.view{display:none}
+.view.active{display:block}
+.step{display:none}
+.step.active{display:block}
+@media(max-width:600px){
+  .sidebar{width:52px}
+  .main{margin-left:52px}
+  .sid-logo .sub,.nav-item span,.sid-status span{display:none}
+  .nav-item{justify-content:center;padding:12px}
+  .cols2,.cols3{grid-template-columns:1fr}
+  .size-grid{grid-template-columns:repeat(4,1fr)}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<div class="sidebar">
+  <div class="sid-logo">
+    <div class="mark">W.OS</div>
+    <div class="sub">UpMerch</div>
+  </div>
+  <nav class="sid-nav">
+    <div class="nav-item active" onclick="showView('inbound',this)">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a.5.5 0 01.5.5v11.793l3.146-3.147a.5.5 0 01.708.708l-4 4a.5.5 0 01-.708 0l-4-4a.5.5 0 01.708-.708L7.5 13.293V1.5A.5.5 0 018 1z"/></svg>
+      <span>Inbound</span>
+    </div>
+    <div class="nav-item" onclick="showView('location',this)">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 16s6-5.686 6-10A6 6 0 002 6c0 4.314 6 10 6 10zm0-7a3 3 0 110-6 3 3 0 010 6z"/></svg>
+      <span>Location Update</span>
+    </div>
+    <div class="nav-item" onclick="showView('oos',this)">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M2 2a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V4a2 2 0 00-2-2H2zm6.5 6.5v3a.5.5 0 01-1 0v-3H4a.5.5 0 010-1h3.5V5a.5.5 0 011 0v2.5H12a.5.5 0 010 1H8.5z"/></svg>
+      <span>Out of Stock</span>
+    </div>
+    <div class="nav-item" onclick="showView('lookup',this)">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M6.5 1a5.5 5.5 0 014.227 9.02l3.127 3.127-1.06 1.06-3.128-3.127A5.5 5.5 0 116.5 1zm0 1.5a4 4 0 100 8 4 4 0 000-8z"/></svg>
+      <span>Inventory Lookup</span>
+    </div>
+    <div class="nav-item" onclick="window.open('wos_3r_map.html','_blank')">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.6 0 0 3.6 0 8s3.6 8 8 8 8-3.6 8-8-3.6-8-8-8zm0 1.5c.8 0 1.9.9 2.8 2.9H5.2C6.1 2.4 7.2 1.5 8 1.5zm-2.3.4C4.6 3.1 3.7 4.4 3.1 6H1.7c.9-1.8 2.4-3.2 4-4.1zM1.3 7.2h1.9c-.1.6-.2 1.2-.2 1.8s.1 1.2.2 1.8H1.3c-.2-.6-.3-1.2-.3-1.8s.1-1.2.3-1.8zm.4 4.8h1.4c.6 1.6 1.5 2.9 2.6 3.7-1.6-.9-3.1-2.3-4-4zm4.1 3.9c-1.1-.8-2.1-2.1-2.7-3.9h2.2c.3 1.1.8 2.1 1.3 2.9-.3-.3-.6-.7-.8-1zm3.2.6c-.8 0-1.9-.9-2.8-2.9h5.6c-.9 2-2 2.9-2.8 2.9zm2.3-.4c.5-.8.9-1.8 1.3-2.9h2.2c-.6 1.8-1.6 3.1-2.7 3.9-.2.3-.5.7-.8 1zm1.5-4.4c.1-.6.2-1.2.2-1.8s-.1-1.2-.2-1.8h1.9c.2.6.3 1.2.3 1.8s-.1 1.2-.3 1.8h-1.9zm.5-4.8c-.9-1.7-2.4-3.1-4-4 1.6.9 3 2.3 4 4zm-2.7-3.7c.5.8 1 1.8 1.3 2.9h-2.2c-.4-1.1-.9-2.1-1.3-2.9.3.3.6.7.8 1zM8.8 6h-1.6c.4-1.6 1-2.8 1.6-3.4H8c.5.6 1 1.8 1.4 3.4H8.8z"/></svg>
+      <span>3R Map</span>
+    </div>
+  </nav>
+  <div class="sid-footer">
+    <div class="sid-status"><div class="status-dot"></div><span>Airtable direct</span></div>
+  </div>
+</div>
+
+<div class="main">
+
+<!-- INBOUND -->
+<div id="view-inbound" class="view active">
+  <div class="topbar">
+    <div class="topbar-title">Inbound / Receiving</div>
+    <div class="topbar-hint">New &amp; existing client stock</div>
+  </div>
+  <div class="content">
+    <div id="api-banner"></div>
+
+    <div id="step-search" class="step active">
+      <div class="section-head">Client</div>
+      <div class="client-search-bar">
+        <input id="search-input" placeholder="Type client name to search…" onkeydown="if(event.key==='Enter')searchClient()" />
+        <button class="btn-primary" onclick="searchClient()">Search</button>
+      </div>
+      <div id="search-result"></div>
+    </div>
+
+    <div id="step-existing" class="step">
+      <div id="existing-client-info"></div>
+      <div class="section-head">Items Being Received</div>
+      <div id="existing-items"></div>
+      <button class="add-item-btn" onclick="addItem('existing-items')">+ Add Another Item</button>
+      <div class="section-head">Details</div>
+      <div class="form-row cols2">
+        <div class="field-group"><label>Received By</label><input id="ex-recvby" placeholder="Name or initials…" /></div>
+        <div class="field-group"><label>Order Ref / PO</label><input id="ex-ref" placeholder="PO or reference…" /></div>
+      </div>
+      <div class="field-group" style="margin-bottom:12px"><label>Notes</label><input id="ex-notes" placeholder="Optional…" /></div>
+      <div class="btn-row">
+        <button class="btn-primary" id="ex-btn" onclick="submitExisting()">Log Inbound</button>
+        <button class="btn-ghost" onclick="resetInbound()">Back</button>
+      </div>
+      <div id="ex-result" style="display:none"></div>
+    </div>
+
+    <div id="step-new" class="step">
+      <div id="new-client-notice"></div>
+      <div class="section-head">Client Details</div>
+      <div class="form-row cols2">
+        <div class="field-group"><label>Client Name</label><input id="new-name" placeholder="Full client / brand name…" /></div>
+        <div class="field-group">
+          <label>Assign Location ID</label>
+          <input id="new-location" placeholder="e.g. 3R-AA, BR-AI-02…" />
+          <div class="form-note">The shelf/row you're putting their stock on</div>
+        </div>
+      </div>
+      <div class="section-head">Stock Being Received</div>
+      <div id="new-items"></div>
+      <button class="add-item-btn" onclick="addItem('new-items')">+ Add Another Item</button>
+      <div class="section-head">Details</div>
+      <div class="form-row cols2">
+        <div class="field-group"><label>Received By</label><input id="new-recvby" placeholder="Name or initials…" /></div>
+        <div class="field-group"><label>Order Ref / PO</label><input id="new-ref" placeholder="PO or reference…" /></div>
+      </div>
+      <div class="field-group" style="margin-bottom:12px"><label>Notes</label><input id="new-notes" placeholder="Optional…" /></div>
+      <div class="btn-row">
+        <button class="btn-primary" id="new-btn" onclick="submitNew()">Create Client &amp; Log Inbound</button>
+        <button class="btn-ghost" onclick="resetInbound()">Back</button>
+      </div>
+      <div id="new-result" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<!-- LOCATION UPDATE -->
+<div id="view-location" class="view">
+  <div class="topbar">
+    <div class="topbar-title">Location Update</div>
+    <div class="topbar-hint">Consolidate or reassign where a client's stock lives</div>
+  </div>
+  <div class="content">
+    <div class="section-head">Find Client</div>
+    <div class="client-search-bar">
+      <input id="loc-search-input" placeholder="Type client name to search…" onkeydown="if(event.key==='Enter')locSearchClient()" />
+      <button class="btn-primary" onclick="locSearchClient()">Search</button>
+    </div>
+    <div id="loc-search-result"></div>
+
+    <div id="loc-form" style="display:none">
+      <div id="loc-client-card"></div>
+
+      <div class="section-head">Update Mode</div>
+      <div class="loc-mode-row">
+        <div class="loc-mode-btn selected" id="loc-mode-replace" onclick="setLocMode('replace')">
+          <div style="font-weight:500;margin-bottom:2px">Replace location</div>
+          <div style="font-size:10.5px;opacity:.7">Set one home location — clears any others</div>
+        </div>
+        <div class="loc-mode-btn" id="loc-mode-add" onclick="setLocMode('add')">
+          <div style="font-weight:500;margin-bottom:2px">Add location</div>
+          <div style="font-size:10.5px;opacity:.7">Append to existing without removing any</div>
+        </div>
+      </div>
+
+      <div class="section-head">New Location</div>
+      <div class="form-row cols2">
+        <div class="field-group">
+          <label>Location FULL ID</label>
+          <input id="loc-new-id" placeholder="e.g. 3R-AA, BR-AI-02, A-01-R1-S2…" />
+          <div class="form-note">Must match exactly — check the Location table or 3R Map</div>
+        </div>
+        <div class="field-group">
+          <label>Updated By</label>
+          <input id="loc-updated-by" placeholder="Name or initials…" />
+        </div>
+      </div>
+
+      <div id="loc-inv-update-toggle" style="margin-bottom:14px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+          <input type="checkbox" id="loc-also-inv" checked style="width:auto;accent-color:var(--green)" />
+          Also update location on all linked inventory records
+        </label>
+        <div class="inv-update-note" style="padding-left:24px">Keeps the map and inventory lookup in sync</div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-primary" id="loc-btn" onclick="submitLocUpdate()">Update Location</button>
+        <button class="btn-ghost" onclick="resetLocForm()">Clear</button>
+      </div>
+      <div id="loc-result" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<!-- OUT OF STOCK -->
+<div id="view-oos" class="view">
+  <div class="topbar">
+    <div class="topbar-title">Out of Stock</div>
+    <div class="topbar-hint">Mark items as depleted in Airtable</div>
+  </div>
+  <div class="content">
+    <div class="section-head">Find Client</div>
+    <div class="client-search-bar">
+      <input id="oos-search-input" placeholder="Type client name to search…" onkeydown="if(event.key==='Enter')oosSearchClient()" />
+      <button class="btn-primary" onclick="oosSearchClient()">Search</button>
+    </div>
+    <div id="oos-search-result"></div>
+    <div id="oos-items-panel" style="display:none">
+      <div id="oos-client-header" style="margin-bottom:14px"></div>
+      <div class="oos-select-bar">
+        <button onclick="oosSelectAll()">Select all</button>
+        <button onclick="oosSelectNone()">Select none</button>
+        <span class="oos-count-label" id="oos-count-label">0 selected</span>
+      </div>
+      <div id="oos-items-list"></div>
+      <div class="btn-row" style="margin-top:14px">
+        <button class="btn-warning" id="oos-btn" onclick="submitOos()">Mark Selected Out of Stock</button>
+        <button class="btn-ghost" onclick="resetOos()">Clear</button>
+      </div>
+      <div id="oos-result" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<!-- LOOKUP -->
+<div id="view-lookup" class="view">
+  <div class="topbar">
+    <div class="topbar-title">Inventory Lookup</div>
+    <div class="topbar-hint">Search by client — for sales cross-reference</div>
+  </div>
+  <div class="content">
+    <div class="lookup-bar">
+      <input id="lookup-q" placeholder='Client name… (e.g. "Arosa", "Merit America x Lyft")' onkeydown="if(event.key==='Enter')doLookup()" />
+      <button class="btn-primary" id="lookup-btn" onclick="doLookup()">Search</button>
+    </div>
+    <div id="lookup-out"><div class="empty-state">Search a client name to see their inventory and locations.</div></div>
+  </div>
+</div>
+
+</div>
+</div>
+
+<script>
+const AT_BASE = 'https://api.airtable.com/v0';
+const BASE    = 'appDztJphtUzYxw2W';
+const TBL = { v:'tblbYBhO79TJrWZpu', inv:'tbl6EXI5TBRziJoQd', loc:'tblephXAY034X8SCp', tx:'tblT1AW1JAHzcYr2z' };
+const F = {
+  vName:'fldZVNqXA4Yd1dtgi', vLoc:'fldkp06ZAirosrYdd', vInv:'fld9E6IoyrI525DIp',
+  invName:'fldE8bVVrvTJd48bM', invVendor:'fldYVmndSO8lGW9wb', invColor:'fldSVSr7wYAcq4Cd4',
+  invLoc:'fldyebAr6S02gqv0f', invXS:'fldbwqVjbdZZGRgXz', invS:'fldf5wcUwWMvJo0iK',
+  invM:'fldMF0xMwwJbHPPzK', invL:'fldm65yf4toaqQUse', invXL:'fldSAK25WRY9ywxJi',
+  inv2XL:'fldJahJO2iHipgdg9', inv3XL:'fldxI6QzHPCGKdxxI', invStatus:'fldTWyqDGdD5jsftt',
+  locFull:'fld6thrMYeCppwORj', locOpen:'fldGfEPmJEYjTqUBK', locVendor:'fldqJ4NOclfiYaVuj',
+  txId:'fldYEdw9crFdFBHZw', txType:'fldGrVUJZFPVgv2HJ', txStatus:'fldFgVylJbY5zagvb',
+  txDate:'fldCUGVBz4TKr8vgN', txClient:'fldnt9q9mUUOnMO9Z', txItem:'fldRwy3iFhXxiEF82',
+  txDesc:'fldTBH1OZnXg6Im2D', txLoc:'fldyTd88uxy4kPABq',
+  txXS:'fldnORBNMoWB39wfj', txS:'fldSxpdQ39Iwc4zHj', txM:'fldBJebKoCJBPd7r3',
+  txL:'fldiiew8fOZCWredF', txXL:'fld1VZtmbyVRPobKy', tx2XL:'fldyL0IUMBNiNOY3X', tx3XL:'fldpgf3zlOM3j7gY1',
+  txReqBy:'fldcfFKEPY9MI73ku', txRef:'fldp2Qsd2l7zHd6yc', txNotes:'fldz0FEB2f5RwlNdx'
+};
+
+let token = localStorage.getItem('wos_token') || '';
+let existingClient = null;
+let itemSeq = 0;
+let locClient = null;
+let locMode = 'replace';
+let locSearchResults = [];
+let oosClient = null;
+let oosInvRecords = [];
+let oosSearchResults = [];
+
+window.addEventListener('DOMContentLoaded', () => {
+  renderBanner();
+  addItem('existing-items');
+  addItem('new-items');
+});
+
+// ── Token ──
+function renderBanner() {
+  const el = document.getElementById('api-banner');
+  if (!el) return;
+  el.innerHTML = token
+    ? `<div class="api-banner"><div class="api-ok">&#10003; Airtable connected &nbsp;<span class="change-key" onclick="clearToken()">change</span></div></div>`
+    : `<div class="api-banner"><label>Airtable API Token</label><input type="password" id="tok-input" placeholder="pat..." /><button class="save-key-btn" onclick="saveToken()">Connect</button></div>`;
+}
+function saveToken() {
+  const v = (document.getElementById('tok-input')?.value || '').trim();
+  if (!v.startsWith('pat')) { alert('Enter a valid Airtable token (starts with pat...)'); return; }
+  token = v; localStorage.setItem('wos_token', v); renderBanner();
+}
+function clearToken() { token = ''; localStorage.removeItem('wos_token'); renderBanner(); }
+
+// ── Airtable fetch ──
+async function at(path, method='GET', body=null) {
+  if (!token) throw new Error('No Airtable token. Enter your pat... token on the Inbound tab.');
+  const opts = { method, headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(AT_BASE + path, opts);
+  const d = await res.json();
+  if (d.error) throw new Error(d.error.message || JSON.stringify(d.error));
+  return d;
+}
+
+// ── Transaction ID ──
+async function nextId() {
+  const today = new Date().toISOString().slice(0,10).replace(/-/g,'');
+  const pfx = 'TXN-' + today;
+  const f = encodeURIComponent('FIND("'+pfx+'",{Transaction ID})');
+  const d = await at(`/${BASE}/${TBL.tx}?filterByFormula=${f}&sort[0][field]=${F.txId}&sort[0][direction]=desc&maxRecords=1&cellValuesByFieldId=true&fields[]=${F.txId}`);
+  if (!d.records.length) return pfx + '-001';
+  const last = d.records[0].fields[F.txId] || '';
+  const n = parseInt(last.split('-').pop() || '0') + 1;
+  return pfx + '-' + String(n).padStart(3,'0');
+}
+
+// ── View ──
+function showView(name, el) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  el.classList.add('active');
+}
+
+// ── Inbound steps ──
+function showStep(s) {
+  document.querySelectorAll('.step').forEach(x => x.classList.remove('active'));
+  document.getElementById('step-' + s).classList.add('active');
+}
+function resetInbound() {
+  existingClient = null;
+  document.getElementById('search-input').value = '';
+  document.getElementById('search-result').innerHTML = '';
+  document.getElementById('existing-items').innerHTML = '';
+  document.getElementById('new-items').innerHTML = '';
+  itemSeq = 0;
+  addItem('existing-items');
+  addItem('new-items');
+  showStep('search');
+}
+
+// ── Client search (inbound) ──
+async function searchClient() {
+  const name = document.getElementById('search-input').value.trim();
+  if (!name) return;
+  const res = document.getElementById('search-result');
+  res.innerHTML = loading('Searching');
+  try {
+    const f = encodeURIComponent('LOWER({Name})=LOWER("'+name.replace(/"/g,'')+'")')
+    const d = await at(`/${BASE}/${TBL.v}?filterByFormula=${f}&fields[]=Name&fields[]=Location`);
+    if (d.records.length) {
+      const c = d.records[0];
+      const locs = (c.fields['Location']||[]).map(l=>l.name).join(', ') || 'No locations assigned yet';
+      existingClient = { id: c.id, name: c.fields['Name'], locIds: c.fields['Location']||[] };
+      document.getElementById('existing-client-info').innerHTML =
+        `<div class="client-found"><div class="client-found-name">&#10003; ${esc(c.fields['Name'])}</div><div class="client-found-locs">Assigned locations: ${esc(locs)}</div></div>`;
+      res.innerHTML = '';
+      showStep('existing');
+    } else {
+      document.getElementById('new-name').value = name;
+      document.getElementById('new-client-notice').innerHTML =
+        `<div class="client-new-badge"><strong>New client — "${esc(name)}" not found in the system.</strong> Fill in their details below to create their profile and log their stock.</div>`;
+      res.innerHTML = '';
+      showStep('new');
+    }
+  } catch(e) { res.innerHTML = errCard(e.message); }
+}
+
+// ── Item blocks ──
+function addItem(containerId) {
+  itemSeq++;
+  const n = itemSeq;
+  const container = document.getElementById(containerId);
+  const idx = container.children.length + 1;
+  const div = document.createElement('div');
+  div.className = 'item-block';
+  div.id = 'ib-' + n;
+  div.innerHTML = `
+    <div class="item-block-header">
+      <div class="item-block-num">Item ${idx}</div>
+      ${idx > 1 ? `<button class="btn-danger" onclick="document.getElementById('ib-${n}').remove()">Remove</button>` : ''}
+    </div>
+    <div class="form-row cols2" style="margin-bottom:10px">
+      <div class="field-group"><label>Item Name</label><input class="i-name" placeholder="e.g. Champion T-Shirt, Hoodie…" /></div>
+      <div class="field-group"><label>Color</label><input class="i-color" placeholder="e.g. Black, Grey, Navy…" /></div>
+    </div>
+    <div><label style="font-size:11px;color:var(--text-2);text-transform:uppercase;letter-spacing:.08em;font-weight:500;display:block;margin-bottom:6px">Quantities by Size</label>
+    <div class="size-grid">
+      <div class="size-cell"><label>XS</label><input type="number" min="0" class="i-xs" placeholder="0"/></div>
+      <div class="size-cell"><label>S</label><input type="number" min="0" class="i-s" placeholder="0"/></div>
+      <div class="size-cell"><label>M</label><input type="number" min="0" class="i-m" placeholder="0"/></div>
+      <div class="size-cell"><label>L</label><input type="number" min="0" class="i-l" placeholder="0"/></div>
+      <div class="size-cell"><label>XL</label><input type="number" min="0" class="i-xl" placeholder="0"/></div>
+      <div class="size-cell"><label>2XL</label><input type="number" min="0" class="i-2xl" placeholder="0"/></div>
+      <div class="size-cell"><label>3XL+</label><input type="number" min="0" class="i-3xl" placeholder="0"/></div>
+    </div></div>`;
+  container.appendChild(div);
+}
+
+function getItems(containerId) {
+  return Array.from(document.getElementById(containerId).querySelectorAll('.item-block')).map(b => ({
+    name:  b.querySelector('.i-name')?.value?.trim()||'',
+    color: b.querySelector('.i-color')?.value?.trim()||'',
+    xs:  +b.querySelector('.i-xs')?.value||0,
+    s:   +b.querySelector('.i-s')?.value||0,
+    m:   +b.querySelector('.i-m')?.value||0,
+    l:   +b.querySelector('.i-l')?.value||0,
+    xl:  +b.querySelector('.i-xl')?.value||0,
+    xxl: +b.querySelector('.i-2xl')?.value||0,
+    xxxl:+b.querySelector('.i-3xl')?.value||0,
+  })).filter(i => i.name);
+}
+
+// ── Find location record ──
+async function findLocRec(fullId) {
+  if (!fullId) return null;
+  const f = encodeURIComponent('{FULL ID}="'+fullId.trim()+'"');
+  const d = await at(`/${BASE}/${TBL.loc}?filterByFormula=${f}&maxRecords=1&fields[]=FULL ID`);
+  return d.records.length ? d.records[0].id : null;
+}
+
+// ── Create inventory records ──
+async function createInvRecords(items, vendorId, locRecId) {
+  const ids = [];
+  for (const item of items) {
+    const fields = { [F.invName]: item.name, [F.invVendor]: [vendorId] };
+    if (item.color) fields[F.invColor] = item.color;
+    if (locRecId)   fields[F.invLoc]   = [locRecId];
+    if (item.xs)    fields[F.invXS]    = String(item.xs);
+    if (item.s)     fields[F.invS]     = String(item.s);
+    if (item.m)     fields[F.invM]     = String(item.m);
+    if (item.l)     fields[F.invL]     = String(item.l);
+    if (item.xl)    fields[F.invXL]    = String(item.xl);
+    if (item.xxl)   fields[F.inv2XL]   = String(item.xxl);
+    if (item.xxxl)  fields[F.inv3XL]   = String(item.xxxl);
+    const rec = await at(`/${BASE}/${TBL.inv}`, 'POST', { fields, typecast: true });
+    ids.push(rec.id);
+  }
+  return ids;
+}
+
+// ── Build transaction fields ──
+function txFields(txId, type, clientId, invIds, locRecId, items, recvBy, ref, notes) {
+  const tot = items.reduce((a,i)=>({xs:a.xs+i.xs,s:a.s+i.s,m:a.m+i.m,l:a.l+i.l,xl:a.xl+i.xl,xxl:a.xxl+i.xxl,xxxl:a.xxxl+i.xxxl}),{xs:0,s:0,m:0,l:0,xl:0,xxl:0,xxxl:0});
+  const desc = items.map(i => i.name + (i.color ? ' ('+i.color+')' : '')).join(', ');
+  const f = {
+    [F.txId]:txId, [F.txType]:type, [F.txStatus]:'Fulfilled',
+    [F.txDate]:new Date().toISOString().slice(0,10),
+    [F.txDesc]:desc, [F.txReqBy]:recvBy, [F.txRef]:ref, [F.txNotes]:notes
+  };
+  if (clientId) f[F.txClient] = [clientId];
+  if (invIds?.length) f[F.txItem] = invIds;
+  if (locRecId) f[F.txLoc] = [locRecId];
+  if (tot.xs)   f[F.txXS]  = tot.xs;
+  if (tot.s)    f[F.txS]   = tot.s;
+  if (tot.m)    f[F.txM]   = tot.m;
+  if (tot.l)    f[F.txL]   = tot.l;
+  if (tot.xl)   f[F.txXL]  = tot.xl;
+  if (tot.xxl)  f[F.tx2XL] = tot.xxl;
+  if (tot.xxxl) f[F.tx3XL] = tot.xxxl;
+  return f;
+}
+
+// ── Submit existing inbound ──
+async function submitExisting() {
+  const btn = document.getElementById('ex-btn');
+  const res = document.getElementById('ex-result');
+  const items = getItems('existing-items');
+  if (!items.length) { showRes(res,'error','Add at least one item.'); return; }
+  btn.disabled=true; btn.textContent='Logging…';
+  try {
+    const locRecId = existingClient.locIds[0]?.id || null;
+    const invIds = await createInvRecords(items, existingClient.id, locRecId);
+    const txId = await nextId();
+    await at(`/${BASE}/${TBL.tx}`, 'POST', { fields: txFields(txId,'Inbound',existingClient.id,invIds,locRecId,items,
+      document.getElementById('ex-recvby').value, document.getElementById('ex-ref').value, document.getElementById('ex-notes').value) });
+    showRes(res,'success',`Logged ✓\n${txId}\n${items.length} item type${items.length>1?'s':''} received for ${existingClient.name}`);
+    document.getElementById('existing-items').innerHTML=''; itemSeq=0; addItem('existing-items');
+    ['ex-recvby','ex-ref','ex-notes'].forEach(id => document.getElementById(id).value='');
+  } catch(e) { showRes(res,'error',e.message); }
+  btn.disabled=false; btn.textContent='Log Inbound';
+}
+
+// ── Submit new client inbound ──
+async function submitNew() {
+  const btn = document.getElementById('new-btn');
+  const res = document.getElementById('new-result');
+  const clientName = document.getElementById('new-name').value.trim();
+  const locationInput = document.getElementById('new-location').value.trim();
+  if (!clientName) { showRes(res,'error','Enter a client name.'); return; }
+  const items = getItems('new-items');
+  if (!items.length) { showRes(res,'error','Add at least one item.'); return; }
+  btn.disabled=true; btn.textContent='Creating…';
+  try {
+    const vendor = await at(`/${BASE}/${TBL.v}`, 'POST', { fields: { [F.vName]: clientName } });
+    const vendorId = vendor.id;
+    let locRecId = null;
+    if (locationInput) {
+      locRecId = await findLocRec(locationInput);
+      if (!locRecId) { showRes(res,'error',`Location "${locationInput}" not found. Check the ID and try again.`); btn.disabled=false; btn.textContent='Create Client & Log Inbound'; return; }
+      await at(`/${BASE}/${TBL.v}/${vendorId}`, 'PATCH', { fields: { [F.vLoc]: [locRecId] } });
+    }
+    const invIds = await createInvRecords(items, vendorId, locRecId);
+    const txId = await nextId();
+    await at(`/${BASE}/${TBL.tx}`, 'POST', { fields: txFields(txId,'Inbound',vendorId,invIds,locRecId,items,
+      document.getElementById('new-recvby').value, document.getElementById('new-ref').value, document.getElementById('new-notes').value) });
+    showRes(res,'success',`Client created ✓\n${txId}\n${clientName} onboarded — ${items.length} item type${items.length>1?'s':''} received${locationInput?' at '+locationInput:''}`);
+    resetInbound();
+  } catch(e) { showRes(res,'error',e.message); }
+  btn.disabled=false; btn.textContent='Create Client & Log Inbound';
+}
+
+// ══════════════════════════════════════════════════════════
+// LOCATION UPDATE
+// ══════════════════════════════════════════════════════════
+
+async function locSearchClient() {
+  const name = document.getElementById('loc-search-input').value.trim();
+  if (!name) return;
+  const res = document.getElementById('loc-search-result');
+  res.innerHTML = loading('Searching');
+  try {
+    const f = encodeURIComponent('SEARCH(LOWER("'+name.replace(/"/g,'')+'"),LOWER({Name}))');
+    const d = await at(`/${BASE}/${TBL.v}?filterByFormula=${f}&cellValuesByFieldId=true&fields[]=${F.vName}&fields[]=${F.vLoc}&fields[]=${F.vInv}&maxRecords=5`);
+    if (!d.records.length) { res.innerHTML = errCard(`No client found matching "${esc(name)}".`); return; }
+    locSearchResults = d.records;
+    if (d.records.length > 1) {
+      res.innerHTML = `<div style="margin-bottom:10px;font-size:12px;color:var(--text-2)">Multiple matches — select one:</div>` +
+        d.records.map((r,i) => `<button class="btn-ghost" style="margin-bottom:6px;width:100%;text-align:left" onclick="locPickResult(${i})">${esc(r.fields[F.vName]||'—')}</button>`).join('');
+      return;
+    }
+    locPickResult(0);
+  } catch(e) { res.innerHTML = errCard(e.message); }
+}
+
+function locPickResult(i) {
+  const r = locSearchResults[i];
+  if (!r) return;
+  locClient = {
+    id: r.id,
+    name: r.fields[F.vName]||'—',
+    locs: (r.fields[F.vLoc]||[]).map(l=>l.name),
+    invIds: (r.fields[F.vInv]||[]).map(l=>l.id)
+  };
+  renderLocClientCard();
+  document.getElementById('loc-search-result').innerHTML = '';
+}
+
+function renderLocClientCard() {
+  if (!locClient) return;
+  const chips = locClient.locs.length
+    ? locClient.locs.map((l,i) => `<span class="loc-chip${i===0?' primary':''}">${esc(l)}</span>`).join('')
+    : `<span style="font-size:12px;color:var(--text-3);font-style:italic">No locations assigned</span>`;
+  document.getElementById('loc-client-card').innerHTML = `
+    <div class="loc-client-card">
+      <div class="loc-client-name">${esc(locClient.name)}</div>
+      <div class="loc-chips">${chips}</div>
+      <div class="loc-chip-label">${locClient.locs.length} location${locClient.locs.length!==1?'s':''} · ${locClient.invIds.length} inventory record${locClient.invIds.length!==1?'s':''}</div>
+    </div>`;
+  document.getElementById('loc-form').style.display = 'block';
+}
+
+function setLocMode(mode) {
+  locMode = mode;
+  document.getElementById('loc-mode-replace').classList.toggle('selected', mode==='replace');
+  document.getElementById('loc-mode-add').classList.toggle('selected', mode==='add');
+}
+
+function resetLocForm() {
+  locClient = null;
+  locMode = 'replace';
+  document.getElementById('loc-search-input').value = '';
+  document.getElementById('loc-search-result').innerHTML = '';
+  document.getElementById('loc-form').style.display = 'none';
+  document.getElementById('loc-new-id').value = '';
+  document.getElementById('loc-updated-by').value = '';
+  document.getElementById('loc-also-inv').checked = true;
+  document.getElementById('loc-result').style.display = 'none';
+  setLocMode('replace');
+}
+
+async function submitLocUpdate() {
+  if (!locClient) return;
+  const newFullId = document.getElementById('loc-new-id').value.trim();
+  if (!newFullId) { showRes(document.getElementById('loc-result'),'error','Enter a location FULL ID.'); return; }
+  const alsoInv = document.getElementById('loc-also-inv').checked;
+  const btn = document.getElementById('loc-btn');
+  const res = document.getElementById('loc-result');
+  btn.disabled = true; btn.textContent = 'Updating…';
+  try {
+    // 1. Resolve location record
+    const locRecId = await findLocRec(newFullId);
+    if (!locRecId) {
+      showRes(res,'error',`Location "${newFullId}" not found. Verify the FULL ID in the Location table.`);
+      btn.disabled=false; btn.textContent='Update Location'; return;
+    }
+
+    // 2. Update vendor location
+    let newLocIds;
+    if (locMode === 'replace') {
+      newLocIds = [locRecId];
+    } else {
+      // Add mode: fetch current loc record IDs then append
+      const vd = await at(`/${BASE}/${TBL.v}/${locClient.id}?cellValuesByFieldId=true&fields[]=${F.vLoc}`);
+      const existing = (vd.fields[F.vLoc]||[]).map(l=>l.id);
+      newLocIds = [...new Set([...existing, locRecId])];
+    }
+    await at(`/${BASE}/${TBL.v}/${locClient.id}`, 'PATCH', { fields: { [F.vLoc]: newLocIds } });
+
+    // 3. Optionally update all linked inventory records
+    let invUpdated = 0;
+    if (alsoInv && locClient.invIds.length) {
+      // Use the linked record IDs we already have — no formula needed
+      for (let i=0; i<locClient.invIds.length; i+=10) {
+        const batch = locClient.invIds.slice(i,i+10).map(id=>({ id, fields:{ [F.invLoc]: [locRecId] } }));
+        await at(`/${BASE}/${TBL.inv}`, 'PATCH', { records: batch });
+        invUpdated += batch.length;
+      }
+    }
+
+    // 4. Success
+    const modeLabel = locMode==='replace' ? 'replaced with' : 'added';
+    showRes(res,'success',
+      `Location updated ✓\n${esc(locClient.name)} → ${modeLabel} ${esc(newFullId)}` +
+      (alsoInv && invUpdated ? `\n${invUpdated} inventory record${invUpdated!==1?'s':''} also updated` : '')
+    );
+    // Refresh client card
+    locClient.locs = locMode==='replace' ? [newFullId] : [...locClient.locs, newFullId];
+    renderLocClientCard();
+    document.getElementById('loc-new-id').value = '';
+  } catch(e) { showRes(res,'error',e.message); }
+  btn.disabled=false; btn.textContent='Update Location';
+}
+
+// ══════════════════════════════════════════════════════════
+// OUT OF STOCK
+// ══════════════════════════════════════════════════════════
+
+async function oosSearchClient() {
+  const name = document.getElementById('oos-search-input').value.trim();
+  if (!name) return;
+  const res = document.getElementById('oos-search-result');
+  res.innerHTML = loading('Searching');
+  try {
+    const f = encodeURIComponent('SEARCH(LOWER("'+name.replace(/"/g,'')+'"),LOWER({Name}))');
+    const d = await at(`/${BASE}/${TBL.v}?filterByFormula=${f}&cellValuesByFieldId=true&fields[]=${F.vName}&fields[]=${F.vInv}&maxRecords=5`);
+    if (!d.records.length) { res.innerHTML = errCard(`No client found matching "${esc(name)}".`); return; }
+    oosSearchResults = d.records;
+    if (d.records.length > 1) {
+      res.innerHTML = `<div style="margin-bottom:10px;font-size:12px;color:var(--text-2)">Multiple matches — select one:</div>` +
+        d.records.map((r,i) => `<button class="btn-ghost" style="margin-bottom:6px;width:100%;text-align:left" onclick="oosPickResult(${i})">
+          ${esc(r.fields[F.vName]||'—')} <span style="font-size:11px;color:var(--text-3)">(${(r.fields[F.vInv]||[]).length} items)</span></button>`).join('');
+      return;
+    }
+    res.innerHTML = '';
+    await oosPickResult(0);
+  } catch(e) { res.innerHTML = errCard(e.message); }
+}
+
+async function oosPickResult(i) {
+  const r = oosSearchResults[i];
+  if (!r) return;
+  oosClient = { id: r.id, name: r.fields[F.vName]||'—' };
+  const invIds = (r.fields[F.vInv]||[]).map(l=>l.id);
+  document.getElementById('oos-search-result').innerHTML = '';
+  await oosLoadInventory(invIds);
+}
+
+async function oosLoadInventory(invIds) {
+  if (!invIds.length) {
+    oosInvRecords = [];
+    renderOosPanel();
+    return;
+  }
+  document.getElementById('oos-search-result').innerHTML = loading('Loading inventory');
+  try {
+    // Fetch by record IDs directly — same pattern as Lookup tab
+    const allRecords = [];
+    for (let i=0; i<invIds.length; i+=20) {
+      const chunk = invIds.slice(i,i+20);
+      const qs = chunk.map(id=>'records[]='+id).join('&');
+      const page = await at(`/${BASE}/${TBL.inv}?${qs}&cellValuesByFieldId=true&fields[]=${F.invName}&fields[]=${F.invColor}&fields[]=${F.invStatus}&fields[]=${F.invXS}&fields[]=${F.invS}&fields[]=${F.invM}&fields[]=${F.invL}&fields[]=${F.invXL}&fields[]=${F.inv2XL}&fields[]=${F.inv3XL}`);
+      page.records.forEach(r => allRecords.push(r));
+    }
+    oosInvRecords = allRecords;
+    document.getElementById('oos-search-result').innerHTML = '';
+    renderOosPanel();
+  } catch(e) { document.getElementById('oos-search-result').innerHTML = errCard(e.message); }
+}
+
+function renderOosPanel() {
+  if (!oosClient || !oosInvRecords.length) {
+    document.getElementById('oos-items-panel').style.display = 'none';
+    document.getElementById('oos-search-result').innerHTML = `<div class="empty-state">No inventory records found for this client.</div>`;
+    return;
+  }
+  document.getElementById('oos-client-header').innerHTML =
+    `<div class="client-found"><div class="client-found-name">${esc(oosClient.name)}</div>
+     <div class="client-found-locs">${oosInvRecords.length} inventory record${oosInvRecords.length!==1?'s':''}</div></div>`;
+
+  const list = document.getElementById('oos-items-list');
+  list.innerHTML = oosInvRecords.map((r,i) => {
+    const f = r.fields;
+    const name = f[F.invName]||'—';
+    const colorVal = f[F.invColor];
+    const color = colorVal && typeof colorVal==='object' ? colorVal.name : (colorVal||'');
+    const statusVal = f[F.invStatus];
+    const status = statusVal && typeof statusVal==='object' ? statusVal.name : (statusVal||'');
+    const isOos = status && status.toLowerCase().includes('out');
+    const sz = [[F.invXS,'XS'],[F.invS,'S'],[F.invM,'M'],[F.invL,'L'],[F.invXL,'XL'],[F.inv2XL,'2XL'],[F.inv3XL,'3XL+']]
+      .map(([fid,lbl])=>f[fid]?`${lbl}:${f[fid]}`:null).filter(Boolean).join(' · ');
+    return `<div class="oos-item-row${isOos?' already-oos':''}" id="oos-row-${i}" onclick="${isOos?'':(`oosToggle(${i})`)}">
+      <input type="checkbox" class="oos-check" id="oos-cb-${i}" ${isOos?'disabled':''}
+        onchange="oosUpdateCount()" onclick="event.stopPropagation()">
+      <div style="flex:1;min-width:0">
+        <div class="oos-item-name">${esc(name)}${color?' <span style="font-weight:400;color:var(--text-2)">· '+esc(color)+'</span>':''}</div>
+        ${sz?`<div class="oos-item-meta">${esc(sz)}</div>`:''}
+      </div>
+      ${isOos
+        ? `<span class="oos-status-badge">Out of stock</span>`
+        : (status ? `<span class="oos-active-badge">${esc(status)}</span>` : '')}
+    </div>`;
+  }).join('');
+
+  document.getElementById('oos-items-panel').style.display = 'block';
+  oosUpdateCount();
+}
+
+function oosToggle(i) {
+  const cb = document.getElementById('oos-cb-'+i);
+  if (cb && !cb.disabled) { cb.checked = !cb.checked; oosUpdateCount(); }
+}
+
+function oosUpdateCount() {
+  const checked = document.querySelectorAll('.oos-check:checked:not(:disabled)').length;
+  document.getElementById('oos-count-label').textContent = checked + ' selected';
+}
+
+function oosSelectAll() {
+  document.querySelectorAll('.oos-check:not(:disabled)').forEach(cb => cb.checked = true);
+  oosUpdateCount();
+}
+
+function oosSelectNone() {
+  document.querySelectorAll('.oos-check:not(:disabled)').forEach(cb => cb.checked = false);
+  oosUpdateCount();
+}
+
+function resetOos() {
+  oosClient = null;
+  oosInvRecords = [];
+  document.getElementById('oos-search-input').value = '';
+  document.getElementById('oos-search-result').innerHTML = '';
+  document.getElementById('oos-items-panel').style.display = 'none';
+  document.getElementById('oos-result').style.display = 'none';
+}
+
+async function submitOos() {
+  const selected = oosInvRecords.filter((_,i) => {
+    const cb = document.getElementById('oos-cb-'+i);
+    return cb && cb.checked && !cb.disabled;
+  });
+  if (!selected.length) {
+    showRes(document.getElementById('oos-result'),'error','Select at least one item to mark out of stock.');
+    return;
+  }
+  const btn = document.getElementById('oos-btn');
+  const res = document.getElementById('oos-result');
+  btn.disabled=true; btn.textContent=`Updating ${selected.length} record${selected.length!==1?'s':''}…`;
+  try {
+    // Patch in batches of 10
+    for (let i=0; i<selected.length; i+=10) {
+      const batch = selected.slice(i,i+10).map(r=>({ id:r.id, fields:{ [F.invStatus]:'Out of Stock' } }));
+      await at(`/${BASE}/${TBL.inv}`, 'PATCH', { records: batch, typecast: true });
+    }
+    showRes(res,'success',`${selected.length} item${selected.length!==1?'s':''} marked Out of Stock ✓`);
+    // Reload the panel using the same record IDs
+    await oosLoadInventory(oosInvRecords.map(r=>r.id));
+  } catch(e) { showRes(res,'error',e.message); }
+  btn.disabled=false; btn.textContent='Mark Selected Out of Stock';
+}
+
+// ══════════════════════════════════════════════════════════
+// LOOKUP
+// ══════════════════════════════════════════════════════════
+
+async function doLookup() {
+  const q = document.getElementById('lookup-q').value.trim();
+  if (!q) return;
+  const btn = document.getElementById('lookup-btn');
+  const out = document.getElementById('lookup-out');
+  btn.disabled=true; btn.textContent='…';
+  out.innerHTML = loading('Searching');
+  try {
+    const f = encodeURIComponent('SEARCH(LOWER("'+q.replace(/"/g,'')+'"),LOWER({Name}))');
+    const vd = await at(`/${BASE}/${TBL.v}?filterByFormula=${f}&cellValuesByFieldId=true&fields[]=${F.vName}&fields[]=${F.vLoc}&fields[]=${F.vInv}`);
+    if (!vd.records.length) { out.innerHTML='<div class="empty-state">No client found matching "'+esc(q)+'".</div>'; btn.disabled=false; btn.textContent='Search'; return; }
+    const c = vd.records[0];
+    const cname = c.fields[F.vName]||'—';
+    const locs = (c.fields[F.vLoc]||[]).map(l=>l.name).join(', ')||'None assigned';
+    const invLinks = (c.fields[F.vInv]||[]).slice(0,20);
+    let rows = '';
+    if (invLinks.length) {
+      const ids = invLinks.map(i=>'records[]='+i.id).join('&');
+      const invData = await at(`/${BASE}/${TBL.inv}?${ids}&cellValuesByFieldId=true&fields[]=${F.invName}&fields[]=${F.invColor}&fields[]=${F.invXS}&fields[]=${F.invS}&fields[]=${F.invM}&fields[]=${F.invL}&fields[]=${F.invXL}&fields[]=${F.inv2XL}&fields[]=${F.inv3XL}&fields[]=${F.invStatus}`);
+      rows = invData.records.map(r => {
+        const fld = r.fields;
+        const colorVal = fld[F.invColor];
+        const color = colorVal && typeof colorVal==='object' ? colorVal.name : (colorVal||'—');
+        const statusVal = fld[F.invStatus];
+        const status = statusVal && typeof statusVal==='object' ? statusVal.name : (statusVal||'');
+        const sz = [[F.invXS,'XS'],[F.invS,'S'],[F.invM,'M'],[F.invL,'L'],[F.invXL,'XL'],[F.inv2XL,'2XL'],[F.inv3XL,'3XL+']]
+          .map(([fid,lbl])=>fld[fid]?`${lbl}:${fld[fid]}`:null).filter(Boolean).join(' · ');
+        const isOos = status && status.toLowerCase().includes('out');
+        return `<tr${isOos?' style="opacity:.5"':''}><td>${esc(fld[F.invName]||'—')}</td><td>${esc(color)}</td>
+          <td style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-2)">${sz||'—'}</td>
+          <td>${isOos?`<span class="oos-status-badge">OOS</span>`:''}</td></tr>`;
+      }).join('');
+    }
+    out.innerHTML = `
+      <div class="result-card info" style="margin-bottom:12px">
+        <div style="font-weight:500;font-size:14px;margin-bottom:4px">${esc(cname)}</div>
+        <div style="font-size:12px;color:var(--text-2)">Locations: <strong>${esc(locs)}</strong></div>
+      </div>
+      ${invLinks.length ? `<div style="overflow-x:auto"><table class="lookup-table"><thead><tr><th>Item</th><th>Color</th><th>Qty on hand</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></div>`
+        : '<div class="empty-state" style="padding:16px 0">No inventory records linked yet.</div>'}`;
+  } catch(e) { out.innerHTML = errCard(e.message); }
+  btn.disabled=false; btn.textContent='Search';
+}
+
+// ── Helpers ──
+function showRes(el, type, text) { el.style.display='block'; el.className='result-card '+type; el.innerHTML='<div style="white-space:pre-wrap">'+esc(text)+'</div>'; }
+function errCard(msg) { return '<div class="result-card error">'+esc(msg)+'</div>'; }
+function loading(txt) { return `<div class="loading-pulse">${txt}<div class="dot-anim"><span></span><span></span><span></span></div></div>`; }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+</script>
+</body>
+</html>
